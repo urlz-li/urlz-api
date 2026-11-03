@@ -1,0 +1,431 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "URLZ API",
+    "version": "2.1.0",
+    "description": "Create and manage short links for URLs, files and photos. URLZ also supports click analytics, password protection, paid-access links, link conversations with URLZ Chat and document collection with URLZ Request.",
+    "termsOfService": "https://urlz.li/terms-and-conditions-of-sale/",
+    "contact": {
+      "name": "URLZ Support",
+      "url": "https://urlz.li/contact/",
+      "email": "support@urlz.li"
+    },
+    "license": {
+      "name": "URLZ Terms of Service",
+      "url": "https://urlz.li/terms-and-conditions-of-sale/"
+    },
+    "x-logo": {
+      "url": "https://urlz.li/assets/img/urlz-app-icon.png",
+      "backgroundColor": "#ffffff",
+      "altText": "URLZ.li"
+    }
+  },
+  "externalDocs": {
+    "description": "URLZ API documentation",
+    "url": "https://urlz.li/doc/"
+  },
+  "servers": [
+    {
+      "url": "https://api.urlz.li",
+      "description": "Production"
+    }
+  ],
+  "tags": [
+    {"name": "API key links", "description": "Server-to-server short-link endpoints."},
+    {"name": "Account", "description": "Account sessions, links, uploads and analytics."},
+    {"name": "URLZ Chat & Request", "description": "Conversations and document requests attached to links."},
+    {"name": "Monetization", "description": "Paid links, protected files and creator sales data."}
+  ],
+  "paths": {
+    "/url/create": {
+      "post": {
+        "tags": ["API key links"],
+        "summary": "Create a short link",
+        "description": "Create a URLZ short link with an active API key.",
+        "operationId": "createShortLink",
+        "security": [{"ApiKeyQuery": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "required": ["apikey", "fullUrl"],
+                "properties": {
+                  "apikey": {"type": "string", "description": "Active URLZ API key."},
+                  "fullUrl": {"type": "string", "format": "uri", "example": "https://example.com/private-report"},
+                  "encrypt": {"type": "string", "default": ""},
+                  "password": {"type": "string", "format": "password", "minLength": 4}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Short link created.",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LegacyCreateResponse"}}}
+          },
+          "400": {"$ref": "#/components/responses/BadRequest"},
+          "403": {"$ref": "#/components/responses/Forbidden"},
+          "429": {"$ref": "#/components/responses/RateLimited"}
+        }
+      }
+    },
+    "/url/list": {
+      "get": {
+        "tags": ["API key links"],
+        "summary": "List and filter API-key links",
+        "operationId": "listApiKeyLinks",
+        "security": [{"ApiKeyQuery": []}],
+        "parameters": [
+          {"$ref": "#/components/parameters/ApiKey"},
+          {"name": "limit", "in": "query", "schema": {"type": "integer", "minimum": 1, "maximum": 1000, "default": 100}},
+          {"name": "offset", "in": "query", "schema": {"type": "integer", "minimum": 0, "default": 0}},
+          {"name": "order", "in": "query", "schema": {"type": "string", "enum": ["asc", "desc"], "default": "desc"}},
+          {"name": "date", "in": "query", "schema": {"type": "string", "format": "date"}},
+          {"name": "from_date", "in": "query", "schema": {"type": "string", "format": "date"}},
+          {"name": "to_date", "in": "query", "schema": {"type": "string", "format": "date"}},
+          {"name": "url_destination", "in": "query", "schema": {"type": "string"}},
+          {"name": "hash", "in": "query", "schema": {"type": "string"}}
+        ],
+        "responses": {
+          "200": {"description": "Matching links.", "content": {"application/json": {"schema": {"type": "object", "additionalProperties": true}}}},
+          "403": {"$ref": "#/components/responses/Forbidden"}
+        }
+      }
+    },
+    "/mobile/v1/auth/login.php": {
+      "post": {
+        "tags": ["Account"],
+        "summary": "Open an account session",
+        "operationId": "login",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": {"type": "string", "format": "email"},
+                  "password": {"type": "string", "format": "password"}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {"description": "Session token and account summary.", "content": {"application/json": {"schema": {"type": "object", "additionalProperties": true}}}},
+          "401": {"$ref": "#/components/responses/Unauthorized"}
+        }
+      }
+    },
+    "/mobile/v1/shorten.php": {
+      "post": {
+        "tags": ["Account"],
+        "summary": "Create an account-linked short link",
+        "operationId": "shortenUrl",
+        "security": [{"BearerAuth": []}, {}],
+        "requestBody": {
+          "required": true,
+          "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ShortenRequest"}}}
+        },
+        "responses": {
+          "200": {"description": "Short link created.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ShortLink"}}}},
+          "400": {"$ref": "#/components/responses/BadRequest"}
+        }
+      }
+    },
+    "/mobile/v1/upload.php": {
+      "post": {
+        "tags": ["Account"],
+        "summary": "Upload a file or photo",
+        "operationId": "uploadFile",
+        "security": [{"BearerAuth": []}, {}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["file"],
+                "properties": {
+                  "file": {"type": "string", "format": "binary"},
+                  "kind": {"type": "string", "enum": ["photo", "document"], "default": "document"},
+                  "password": {"type": "string", "format": "password", "minLength": 4}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {"description": "File uploaded and short link created.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ShortLink"}}}},
+          "400": {"$ref": "#/components/responses/BadRequest"}
+        }
+      }
+    },
+    "/mobile/v1/links.php": {
+      "get": {
+        "tags": ["Account"],
+        "summary": "List account links",
+        "operationId": "listAccountLinks",
+        "security": [{"BearerAuth": []}],
+        "parameters": [
+          {"name": "limit", "in": "query", "schema": {"type": "integer", "minimum": 1, "maximum": 100, "default": 100}},
+          {"name": "offset", "in": "query", "schema": {"type": "integer", "minimum": 0, "default": 0}}
+        ],
+        "responses": {
+          "200": {"description": "Account links and totals.", "content": {"application/json": {"schema": {"type": "object", "additionalProperties": true}}}},
+          "401": {"$ref": "#/components/responses/Unauthorized"}
+        }
+      }
+    },
+    "/mobile/v1/clicks.php": {
+      "get": {
+        "tags": ["Account"],
+        "summary": "Read click analytics",
+        "operationId": "getClickAnalytics",
+        "security": [{"BearerAuth": []}],
+        "parameters": [
+          {"name": "linkId", "in": "query", "required": true, "schema": {"type": "integer"}},
+          {"name": "limit", "in": "query", "schema": {"type": "integer", "minimum": 1, "maximum": 100, "default": 100}},
+          {"name": "offset", "in": "query", "schema": {"type": "integer", "minimum": 0, "default": 0}}
+        ],
+        "responses": {
+          "200": {"description": "Click totals, visitors, countries and events.", "content": {"application/json": {"schema": {"type": "object", "additionalProperties": true}}}},
+          "401": {"$ref": "#/components/responses/Unauthorized"}
+        }
+      }
+    },
+    "/mobile/v1/delete-link.php": {
+      "delete": {
+        "tags": ["Account"],
+        "summary": "Delete an owned link",
+        "operationId": "deleteLink",
+        "security": [{"BearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {"application/json": {"schema": {"type": "object", "required": ["hash"], "properties": {"hash": {"type": "string"}}}}}
+        },
+        "responses": {
+          "200": {"description": "Link deleted.", "content": {"application/json": {"schema": {"type": "object", "properties": {"ok": {"type": "boolean"}, "message": {"type": "string"}}}}}},
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "404": {"$ref": "#/components/responses/NotFound"}
+        }
+      }
+    },
+    "/mobile/v1/collaboration/configure.php": {
+      "post": {
+        "tags": ["URLZ Chat & Request"],
+        "summary": "Enable URLZ Chat or URLZ Request",
+        "operationId": "configureCollaboration",
+        "security": [{"BearerAuth": []}, {"ApiKeyQuery": []}],
+        "requestBody": {
+          "required": true,
+          "content": {"application/json": {"schema": {"$ref": "#/components/schemas/CollaborationRequest"}}}
+        },
+        "responses": {
+          "200": {"description": "Link collaboration settings saved.", "content": {"application/json": {"schema": {"type": "object", "additionalProperties": true}}}},
+          "401": {"$ref": "#/components/responses/Unauthorized"}
+        }
+      }
+    },
+    "/mobile/v1/collaboration/chats.php": {
+      "get": {
+        "tags": ["URLZ Chat & Request"],
+        "summary": "List link conversations",
+        "operationId": "listLinkChats",
+        "security": [{"BearerAuth": []}],
+        "parameters": [
+          {"name": "id", "in": "query", "schema": {"type": "integer"}},
+          {"name": "after", "in": "query", "schema": {"type": "integer", "minimum": 0, "default": 0}}
+        ],
+        "responses": {
+          "200": {"description": "Chat-enabled links or a conversation detail.", "content": {"application/json": {"schema": {"type": "object", "additionalProperties": true}}}},
+          "401": {"$ref": "#/components/responses/Unauthorized"}
+        }
+      }
+    },
+    "/mobile/v1/collaboration/requests.php": {
+      "get": {
+        "tags": ["URLZ Chat & Request"],
+        "summary": "Track document requests",
+        "operationId": "listDocumentRequests",
+        "security": [{"BearerAuth": []}],
+        "parameters": [{"name": "id", "in": "query", "schema": {"type": "integer"}}],
+        "responses": {
+          "200": {"description": "Document requests or full request detail.", "content": {"application/json": {"schema": {"type": "object", "additionalProperties": true}}}},
+          "401": {"$ref": "#/components/responses/Unauthorized"}
+        }
+      }
+    },
+    "/mobile/v1/monetization/links.php": {
+      "get": {
+        "tags": ["Monetization"],
+        "summary": "List paid links",
+        "operationId": "listPaidLinks",
+        "security": [{"BearerAuth": []}],
+        "responses": {
+          "200": {"description": "Paid links with sales and revenue totals.", "content": {"application/json": {"schema": {"type": "object", "additionalProperties": true}}}},
+          "401": {"$ref": "#/components/responses/Unauthorized"}
+        }
+      },
+      "post": {
+        "tags": ["Monetization"],
+        "summary": "Create or convert a paid link",
+        "operationId": "createPaidLink",
+        "security": [{"BearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {"application/json": {"schema": {"$ref": "#/components/schemas/PaidLinkRequest"}}}
+        },
+        "responses": {
+          "200": {"description": "Paid link created or converted.", "content": {"application/json": {"schema": {"type": "object", "additionalProperties": true}}}},
+          "401": {"$ref": "#/components/responses/Unauthorized"}
+        }
+      }
+    },
+    "/mobile/v1/monetization/upload.php": {
+      "post": {
+        "tags": ["Monetization"],
+        "summary": "Create a paid file or photo",
+        "operationId": "uploadPaidContent",
+        "security": [{"BearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["file", "title", "price", "currency"],
+                "properties": {
+                  "file": {"type": "string", "format": "binary"},
+                  "kind": {"type": "string", "enum": ["photo", "file"], "default": "file"},
+                  "title": {"type": "string", "maxLength": 180},
+                  "description": {"type": "string", "maxLength": 3000},
+                  "price": {"type": "number", "format": "decimal", "minimum": 0.5},
+                  "currency": {"type": "string", "enum": ["EUR", "USD"], "default": "USD"},
+                  "accessPolicy": {"type": "string", "enum": ["permanent", "timed", "limited"], "default": "permanent"},
+                  "locale": {"type": "string", "default": "en"}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {"description": "Paid content link created.", "content": {"application/json": {"schema": {"type": "object", "additionalProperties": true}}}},
+          "401": {"$ref": "#/components/responses/Unauthorized"}
+        }
+      }
+    },
+    "/mobile/v1/monetization/transactions.php": {
+      "get": {
+        "tags": ["Monetization"],
+        "summary": "List paid-link sales",
+        "operationId": "listPaidLinkSales",
+        "security": [{"BearerAuth": []}],
+        "responses": {
+          "200": {"description": "Orders, fees, net revenue and fund-release dates.", "content": {"application/json": {"schema": {"type": "object", "additionalProperties": true}}}},
+          "401": {"$ref": "#/components/responses/Unauthorized"}
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {"type": "http", "scheme": "bearer", "bearerFormat": "opaque session token"},
+      "ApiKeyQuery": {"type": "apiKey", "in": "query", "name": "apikey"}
+    },
+    "parameters": {
+      "ApiKey": {"name": "apikey", "in": "query", "required": true, "schema": {"type": "string"}, "description": "Active URLZ API key."}
+    },
+    "responses": {
+      "BadRequest": {"description": "Invalid request.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+      "Unauthorized": {"description": "Authentication required or invalid.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+      "Forbidden": {"description": "The account, plan or API key cannot perform this action.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+      "NotFound": {"description": "Resource not found.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+      "RateLimited": {"description": "Too many requests.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}}
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "message": {"type": "string"},
+          "error": {"type": "string"}
+        }
+      },
+      "LegacyCreateResponse": {
+        "type": "object",
+        "properties": {
+          "result": {
+            "type": "object",
+            "properties": {
+              "short_url": {"type": "string", "format": "uri", "example": "https://urlz.li/7b3c2e5a"},
+              "hash": {"type": "string", "example": "7b3c2e5a"},
+              "date": {"type": "string", "format": "date"},
+              "time": {"type": "string", "example": "14:32:10"}
+            }
+          }
+        }
+      },
+      "ShortenRequest": {
+        "type": "object",
+        "required": ["url"],
+        "properties": {
+          "url": {"type": "string", "format": "uri"},
+          "password": {"type": "string", "format": "password", "minLength": 4}
+        }
+      },
+      "ShortLink": {
+        "type": "object",
+        "properties": {
+          "shortUrl": {"type": "string", "format": "uri", "example": "https://urlz.li/Ab3dE91x"},
+          "destination": {"type": "string", "format": "uri"},
+          "hash": {"type": "string", "example": "Ab3dE91x"},
+          "protected": {"type": "boolean"}
+        }
+      },
+      "CollaborationRequest": {
+        "type": "object",
+        "required": ["hash"],
+        "properties": {
+          "hash": {"type": "string"},
+          "chat": {"type": "object", "properties": {"enabled": {"type": "boolean"}}},
+          "request": {
+            "type": "object",
+            "properties": {
+              "enabled": {"type": "boolean"},
+              "title": {"type": "string"},
+              "items": {"type": "array", "items": {"type": "string"}},
+              "recipients": {"type": "array", "items": {"type": "string", "format": "email"}},
+              "deadline": {"type": "string", "format": "date-time"},
+              "paymentRequired": {"type": "boolean"}
+            }
+          }
+        }
+      },
+      "PaidLinkRequest": {
+        "type": "object",
+        "required": ["title", "price", "currency"],
+        "properties": {
+          "destination": {"type": "string", "format": "uri"},
+          "existingLinkId": {"type": "integer"},
+          "title": {"type": "string", "maxLength": 180},
+          "description": {"type": "string", "maxLength": 3000},
+          "price": {"type": "number", "format": "decimal", "minimum": 0.5},
+          "currency": {"type": "string", "enum": ["EUR", "USD"], "default": "USD"},
+          "accessPolicy": {"type": "string", "enum": ["permanent", "timed", "limited"], "default": "permanent"},
+          "accessDurationHours": {"type": "integer", "minimum": 1, "maximum": 8760, "default": 24},
+          "maxAccesses": {"type": "integer", "minimum": 1, "maximum": 1000, "default": 1},
+          "locale": {"type": "string", "default": "en"}
+        },
+        "oneOf": [
+          {"required": ["destination"]},
+          {"required": ["existingLinkId"]}
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,9 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Private account support
+    url: https://urlz.li/contact/
+    about: Use the private URLZ support channel for account-specific questions.
+  - name: Security report
+    url: https://urlz.li/contact/
+    about: Report vulnerabilities privately. Never publish exploit details or credentials.
+

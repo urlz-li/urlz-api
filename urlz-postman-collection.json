@@ -1,0 +1,190 @@
+{
+  "info": {
+    "_postman_id": "7b45c62c-9f3d-4ed8-8de8-96bc1f86a6b1",
+    "name": "URLZ API",
+    "description": "Official URLZ collection for short links, files, photos, analytics, URLZ Chat, URLZ Request and paid-access links. Documentation: https://urlz.li/doc/",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {"key": "apiBase", "value": "https://api.urlz.li"},
+    {"key": "apiKey", "value": "YOUR_API_KEY", "type": "secret"},
+    {"key": "bearerToken", "value": "SESSION_TOKEN", "type": "secret"},
+    {"key": "linkId", "value": "1204"},
+    {"key": "linkHash", "value": "7b3c2e5a"}
+  ],
+  "item": [
+    {
+      "name": "API key links",
+      "item": [
+        {
+          "name": "Create a short link",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {"mode": "urlencoded", "urlencoded": [
+              {"key": "apikey", "value": "{{apiKey}}", "type": "text"},
+              {"key": "fullUrl", "value": "https://example.com/private-report", "type": "text"}
+            ]},
+            "url": "{{apiBase}}/url/create",
+            "description": "Create a URLZ short link with an active API key."
+          }
+        },
+        {
+          "name": "List API-key links",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{apiBase}}/url/list?apikey={{apiKey}}&limit=25&order=desc"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Account links",
+      "item": [
+        {
+          "name": "Open an account session",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"email\": \"developer@example.com\",\n  \"password\": \"YOUR_PASSWORD\"\n}"},
+            "url": "{{apiBase}}/mobile/v1/auth/login.php"
+          }
+        },
+        {
+          "name": "Create an account-linked link",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{bearerToken}}", "type": "string"}]},
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"url\": \"https://example.com/private\"\n}"},
+            "url": "{{apiBase}}/mobile/v1/shorten.php"
+          }
+        },
+        {
+          "name": "Upload a file or photo",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{bearerToken}}", "type": "string"}]},
+            "method": "POST",
+            "header": [],
+            "body": {"mode": "formdata", "formdata": [
+              {"key": "file", "type": "file", "src": []},
+              {"key": "kind", "value": "photo", "type": "text"}
+            ]},
+            "url": "{{apiBase}}/mobile/v1/upload.php"
+          }
+        },
+        {
+          "name": "List account links",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{bearerToken}}", "type": "string"}]},
+            "method": "GET",
+            "header": [],
+            "url": "{{apiBase}}/mobile/v1/links.php?limit=25&offset=0"
+          }
+        },
+        {
+          "name": "Read click analytics",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{bearerToken}}", "type": "string"}]},
+            "method": "GET",
+            "header": [],
+            "url": "{{apiBase}}/mobile/v1/clicks.php?linkId={{linkId}}&limit=25"
+          }
+        },
+        {
+          "name": "Delete an owned link",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{bearerToken}}", "type": "string"}]},
+            "method": "DELETE",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"hash\": \"{{linkHash}}\"\n}"},
+            "url": "{{apiBase}}/mobile/v1/delete-link.php"
+          }
+        }
+      ]
+    },
+    {
+      "name": "URLZ Chat & Request",
+      "item": [
+        {
+          "name": "Enable URLZ Chat or URLZ Request",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{bearerToken}}", "type": "string"}]},
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"hash\": \"{{linkHash}}\",\n  \"chat\": {\"enabled\": true},\n  \"request\": {\n    \"enabled\": true,\n    \"title\": \"Accounting documents\",\n    \"items\": [\"Invoices\", \"Bank statement\"]\n  }\n}"},
+            "url": "{{apiBase}}/mobile/v1/collaboration/configure.php"
+          }
+        },
+        {
+          "name": "List link conversations",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{bearerToken}}", "type": "string"}]},
+            "method": "GET",
+            "header": [],
+            "url": "{{apiBase}}/mobile/v1/collaboration/chats.php"
+          }
+        },
+        {
+          "name": "Track document requests",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{bearerToken}}", "type": "string"}]},
+            "method": "GET",
+            "header": [],
+            "url": "{{apiBase}}/mobile/v1/collaboration/requests.php"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Monetization",
+      "item": [
+        {
+          "name": "Create a paid link",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{bearerToken}}", "type": "string"}]},
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"destination\": \"https://example.com/private-course\",\n  \"title\": \"Private course access\",\n  \"price\": \"9.90\",\n  \"currency\": \"EUR\",\n  \"accessPolicy\": \"permanent\",\n  \"locale\": \"en\"\n}"},
+            "url": "{{apiBase}}/mobile/v1/monetization/links.php"
+          }
+        },
+        {
+          "name": "Upload paid content",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{bearerToken}}", "type": "string"}]},
+            "method": "POST",
+            "header": [],
+            "body": {"mode": "formdata", "formdata": [
+              {"key": "file", "type": "file", "src": []},
+              {"key": "kind", "value": "photo", "type": "text"},
+              {"key": "title", "value": "Premium photo", "type": "text"},
+              {"key": "price", "value": "4.90", "type": "text"},
+              {"key": "currency", "value": "EUR", "type": "text"}
+            ]},
+            "url": "{{apiBase}}/mobile/v1/monetization/upload.php"
+          }
+        },
+        {
+          "name": "List paid links",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{bearerToken}}", "type": "string"}]},
+            "method": "GET",
+            "header": [],
+            "url": "{{apiBase}}/mobile/v1/monetization/links.php"
+          }
+        },
+        {
+          "name": "List paid-link sales",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{bearerToken}}", "type": "string"}]},
+            "method": "GET",
+            "header": [],
+            "url": "{{apiBase}}/mobile/v1/monetization/transactions.php"
+          }
+        }
+      ]
+    }
+  ]
+}

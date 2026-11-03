@@ -1,0 +1,20 @@
+name: Developer experience suggestion
+description: Suggest an improvement to the public documentation or examples
+title: "[Suggestion]: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: need
+    attributes:
+      label: Developer need
+      description: What integration problem would this improvement solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed improvement
+    validations:
+      required: true
+

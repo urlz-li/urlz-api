@@ -1,0 +1,30 @@
+name: Documentation or example bug
+description: Report a reproducible problem in this repository
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: Do not include API keys, passwords, private links or personal data.
+  - type: input
+    id: location
+    attributes:
+      label: File or documentation URL
+      placeholder: docs/getting-started.md
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: Explain what is incorrect and how to reproduce it.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result
+    validations:
+      required: true
+
